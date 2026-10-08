@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Reflexo Relâmpago — teste seus reflexos em 30 segundos.">
+<title>Reflexo Relâmpago</title>
+<style>
+  :root{
+    --bg:#0b1020;
+    --panel:#121a2d;
+    --panel2:#17223b;
+    --text:#f6f8ff;
+    --muted:#aab4cc;
+    --accent:#55e6a5;
+    --danger:#ff6178;
+    --gold:#ffd166;
+    --line:#263451;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%;background:radial-gradient(circle at top,#19284a 0,#0b1020 50%,#060910 100%);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{display:flex;justify-content:center;align-items:center;padding:14px}
+  .app{width:min(920px,100%);min-height:calc(100vh - 28px);display:flex;flex-direction:column}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .brand{font-size:clamp(20px,4vw,30px);font-weight:900;letter-spacing:-.04em}
+  .brand span{color:var(--accent)}
+  .mini{display:flex;gap:8px;align-items:center}
+  .stat{background:rgba(18,26,45,.92);border:1px solid var(--line);border-radius:14px;padding:8px 12px;min-width:88px;text-align:center}
+  .stat small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.12em}
+  .stat strong{font-size:20px}
+  .game-wrap{position:relative;flex:1;min-height:560px;background:rgba(11,16,32,.55);border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+  #arena{position:absolute;inset:0;overflow:hidden;touch-action:manipulation}
+  .hud{position:absolute;z-index:10;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;gap:10px;pointer-events:none}
+  .hudbox{background:rgba(9,13,25,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:8px 11px}
+  .hudbox small{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.1em}
+  .hudbox strong{font-size:18px}
+  .timerbar{position:absolute;z-index:12;top:0;left:0;height:5px;background:var(--accent);width:100%;transform-origin:left center;box-shadow:0 0 16px rgba(85,230,165,.55);transition:width .08s linear}
+  .target{position:absolute;width:76px;height:76px;border-radius:50%;border:0;cursor:pointer;transform:translate(-50%,-50%) scale(.65);opacity:0;animation:pop .16s ease-out forwards;box-shadow:0 0 0 8px rgba(255,255,255,.06),0 0 36px rgba(85,230,165,.45)}
+  .target::before{content:"";position:absolute;inset:8px;border-radius:50%;background:rgba(255,255,255,.14)}
+  .target::after{content:"";position:absolute;inset:25px;border-radius:50%;background:#fff}
+  .target.good{background:var(--accent)}
+  .target.gold{background:var(--gold);box-shadow:0 0 0 8px rgba(255,209,102,.08),0 0 42px rgba(255,209,102,.5)}
+  .target.bad{background:var(--danger);box-shadow:0 0 0 8px rgba(255,97,120,.07),0 0 40px rgba(255,97,120,.42)}
+  @keyframes pop{to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  .flash{position:absolute;inset:0;pointer-events:none;opacity:0}
+  .flash.show{animation:flash .22s ease-out}
+  @keyframes flash{0%{opacity:.18}100%{opacity:0}}
+  .overlay{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:22px;background:linear-gradient(rgba(6,9,16,.35),rgba(6,9,16,.72));}
+  .card{width:min(560px,100%);background:rgba(18,26,45,.94);border:1px solid #2b3b5d;border-radius:22px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.46);text-align:center}
+  h1{font-size:clamp(32px,7vw,58px);line-height:.98;margin:0 0 12px;letter-spacing:-.05em}
+  .sub{color:var(--muted);line-height:1.55;margin:0 auto 20px;max-width:470px}
+  .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0 22px;text-align:left}
+  .rule{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .rule b{font-size:18px}.rule small{display:block;color:var(--muted);margin-top:4px;line-height:1.25}
+  button.main{width:100%;padding:16px 20px;border:0;border-radius:15px;background:var(--accent);color:#07110c;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 10px 32px rgba(85,230,165,.2)}
+  button.main:active{transform:translateY(1px)}
+  .actions{display:flex;gap:10px;margin-top:12px}
+  button.secondary{flex:1;padding:13px;border-radius:13px;border:1px solid var(--line);background:#111a2e;color:var(--text);font-weight:800;cursor:pointer}
+  .share{background:var(--gold)!important;color:#201800!important;border-color:transparent!important}
+  .hidden{display:none!important}
+  .adslot{margin-top:12px;min-height:72px;border:1px dashed #334565;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#6f7e9a;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+  .footer{text-align:center;color:#65718a;font-size:11px;padding:10px 0 2px}
+  .combo{font-size:12px;color:var(--gold);margin-left:5px}
+  @media(max-width:620px){
+    body{padding:8px}.app{min-height:calc(100vh - 16px)}.game-wrap{min-height:620px;border-radius:19px}
+    .topbar{margin-bottom:8px}.stat{min-width:72px;padding:7px 9px}.stat strong{font-size:17px}
+    .rules{grid-template-columns:1fr}.card{padding:23px}
+    .target{width:68px;height:68px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">REFLEXO <span>RELÂMPAGO</span></div>
+    <div class="mini">
+      <div class="stat"><small>Recorde</small><strong id="bestTop">0</strong></div>
+      <div class="stat"><small>Pontos</small><strong id="scoreTop">0</strong></div>
+    </div>
+  </div>
+
+  <div class="game-wrap">
+    <div class="timerbar" id="timerbar"></div>
+    <div id="arena" aria-label="Área do jogo"></div>
+    <div class="flash" id="flash"></div>
+
+    <div class="hud">
+      <div class="hudbox"><small>Tempo</small><strong id="timeText">30,0</strong>s</div>
+      <div class="hudbox"><small>Sequência</small><strong id="comboText">0</strong><span class="combo" id="comboBonus"></span></div>
+    </div>
+
+    <div class="overlay" id="startOverlay">
+      <div class="card">
+        <h1>⚡ Acerte.<br>O mais rápido.</h1>
+        <p class="sub">Clique ou toque no alvo antes que ele suma. A velocidade aumenta conforme você joga.</p>
+        <div class="rules">
+          <div class="rule"><b>🟢 +10</b><small>Alvo normal</small></div>
+          <div class="rule"><b>🟡 +30</b><small>Alvo dourado raro</small></div>
+          <div class="rule"><b>🔴 −20</b><small>Evite o vermelho</small></div>
+        </div>
+        <button class="main" id="startBtn">COMEÇAR AGORA</button>
+        <div class="adslot">espaço para anúncio</div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="endOverlay">
+      <div class="card">
+        <h1 id="endTitle">Fim de jogo!</h1>
+        <p class="sub" id="endSub">Você fez 0 pontos.</p>
+        <div class="rules">
+          <div class="rule"><b id="finalScore">0</b><small>Pontuação</small></div>
+          <div class="rule"><b id="finalHits">0</b><small>Acertos</small></div>
+          <div class="rule"><b id="finalBest">0</b><small>Recorde</small></div>
+        </div>
+        <button class="main" id="againBtn">JOGAR NOVAMENTE</button>
+        <div class="actions">
+          <button class="secondary share" id="shareBtn">📤 COMPARTILHAR</button>
+          <button class="secondary" id="menuBtn">MENU</button>
+        </div>
+        <div class="adslot">espaço para anúncio pós-jogo</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">Jogo gratuito • Feito para celular e computador</div>
+</div>
+
+<script>
+(() => {
+  const arena = document.getElementById('arena');
+  const startOverlay = document.getElementById('startOverlay');
+  const endOverlay = document.getElementById('endOverlay');
+  const startBtn = document.getElementById('startBtn');
+  const againBtn = document.getElementById('againBtn');
+  const menuBtn = document.getElementById('menuBtn');
+  const shareBtn = document.getElementById('shareBtn');
+
+  const scoreTop = document.getElementById('scoreTop');
+  const bestTop = document.getElementById('bestTop');
+  const timeText = document.getElementById('timeText');
+  const comboText = document.getElementById('comboText');
+  const comboBonus = document.getElementById('comboBonus');
+  const timerbar = document.getElementById('timerbar');
+  const flash = document.getElementById('flash');
+
+  const finalScore = document.getElementById('finalScore');
+  const finalHits = document.getElementById('finalHits');
+  const finalBest = document.getElementById('finalBest');
+  const endSub = document.getElementById('endSub');
+
+  let score = 0, best = Number(localStorage.getItem('reflexoBest') || 0);
+  let hits = 0, combo = 0, running = false, endAt = 0, raf = 0, targetTimer = 0;
+  let lastType = 'good';
+
+  bestTop.textContent = best;
+
+  function clearTarget(){
+    const t = arena.querySelector('.target');
+    if (t) t.remove();
+    clearTimeout(targetTimer);
+  }
+
+  function difficulty(){
+    const elapsed = 30 - Math.max(0, (endAt - performance.now()) / 1000);
+    return Math.min(1, elapsed / 30);
+  }
+
+  function spawnTarget(){
+    if (!running) return;
+    clearTarget();
+
+    const rect = arena.getBoundingClientRect();
+    const pad = 54;
+    const x = pad + Math.random() * Math.max(10, rect.width - pad * 2);
+    const y = 90 + Math.random() * Math.max(10, rect.height - 90 - pad);
+
+    const roll = Math.random();
+    let type = 'good';
+    if (roll < .08) type = 'gold';
+    else if (roll > .91) type = 'bad';
+    if (type === 'bad' && lastType === 'bad') type = 'good';
+    lastType = type;
+
+    const target = document.createElement('button');
+    target.className = 'target ' + type;
+    target.setAttribute('aria-label', type === 'bad' ? 'Alvo vermelho — não tocar' : 'Alvo');
+    target.style.left = x + 'px';
+    target.style.top = y + 'px';
+    target.dataset.type = type;
+    target.addEventListener('pointerdown', hitTarget, {once:true});
+    arena.appendChild(target);
+
+    const d = difficulty();
+    const life = Math.max(280, 900 - d * 500);
+    targetTimer = setTimeout(() => {
+      if (!running) return;
+      combo = 0;
+      updateHud();
+      spawnTarget();
+    }, life);
+  }
+
+  function hitTarget(e){
+    if (!running) return;
+    e.preventDefault();
+    const target = e.currentTarget;
+    const type = target.dataset.type;
+    const base = type === 'gold' ? 30 : type === 'bad' ? -20 : 10;
+
+    if (type === 'bad'){
+      score = Math.max(0, score + base);
+      combo = 0;
+      flash.style.background = 'rgba(255,97,120,.95)';
+    } else {
+      combo += 1;
+      const bonus = combo >= 5 ? Math.min(20, Math.floor(combo / 5) * 5) : 0;
+      score += base + bonus;
+      hits += 1;
+      flash.style.background = type === 'gold' ? 'rgba(255,209,102,.85)' : 'rgba(85,230,165,.45)';
+    }
+    flash.classList.remove('show');
+    void flash.offsetWidth;
+    flash.classList.add('show');
+
+    target.remove();
+    updateHud();
+    spawnTarget();
+  }
+
+  function updateHud(){
+    scoreTop.textContent = score;
+    comboText.textContent = combo;
+    comboBonus.textContent = combo >= 5 ? '+' + Math.min(20, Math.floor(combo / 5) * 5) : '';
+  }
+
+  function tick(now){
+    if (!running) return;
+    const remaining = Math.max(0, (endAt - now) / 1000);
+    timeText.textContent = remaining.toFixed(1);
+    timerbar.style.width = (remaining / 30 * 100) + '%';
+    if (remaining <= 0){
+      finish();
+      return;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function startGame(){
+    cancelAnimationFrame(raf);
+    clearTarget();
+    score = 0; hits = 0; combo = 0; running = true;
+    endAt = performance.now() + 30000;
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    timeText.textContent = '30,0';
+    timerbar.style.width = '100%';
+    updateHud();
+    spawnTarget();
+    raf = requestAnimationFrame(tick);
+  }
+
+  function finish(){
+    if (!running) return;
+    running = false;
+    cancelAnimationFrame(raf);
+    clearTarget();
+
+    if (score > best){
+      best = score;
+      localStorage.setItem('reflexoBest', String(best));
+    }
+    finalScore.textContent = score;
+    finalHits.textContent = hits;
+    finalBest.textContent = best;
+    bestTop.textContent = best;
+    endSub.textContent = score >= best && score > 0
+      ? '🏆 Novo recorde! Consegue superar de novo?'
+      : 'Você fez ' + score + ' pontos. Tente mais uma vez.';
+    endOverlay.classList.remove('hidden');
+  }
+
+  startBtn.addEventListener('click', startGame);
+  againBtn.addEventListener('click', startGame);
+  menuBtn.addEventListener('click', () => {
+    endOverlay.classList.add('hidden');
+    startOverlay.classList.remove('hidden');
+  });
+
+  shareBtn.addEventListener('click', async () => {
+    const text = `⚡ Fiz ${score} pontos no Reflexo Relâmpago! Meu recorde é ${best}. Você consegue bater?`;
+    try {
+      if (navigator.share){
+        await navigator.share({title:'Reflexo Relâmpago', text});
+      } else if (navigator.clipboard){
+        await navigator.clipboard.writeText(text);
+        shareBtn.textContent = '✅ COPIADO!';
+        setTimeout(() => shareBtn.textContent = '📤 COMPARTILHAR', 1400);
+      }
+    } catch(e){}
+  });
+
+  window.addEventListener('resize', () => {
+    if (running) spawnTarget();
+  });
+})();
+</script>
+</body>
+</html>
